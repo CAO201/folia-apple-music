@@ -1,0 +1,29 @@
+name: Build Apple Music macOS test package
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  apple-silicon:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Require native Apple Silicon runner
+        run: test "$(uname -m)" = arm64
+      - run: npm ci
+      - run: npm run apple:check
+      - run: npm run apple:dmg
+      - run: npm run apple:source
+      - run: node scripts/apple-music/checksums.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: folia-apple-music-macos-arm64-test
+          path: |
+            release/apple-music/*.dmg
+            release/apple-music/*-source.zip
+            release/apple-music/SHA256SUMS.txt
+          if-no-files-found: error

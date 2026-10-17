@@ -1,0 +1,27 @@
+{
+  "freshProfile": true,
+  "window": true,
+  "automaticConnection": true,
+  "libraryReadable": true,
+  "lyrics": true,
+  "updateDisabled": true,
+  "originalLicensePresent": true,
+  "audioUntouched": true,
+  "statusBefore": {
+    "ok": true,
+    "data": {
+      "authorized": true,
+      "signed": true,
+      "engine": "system"
+    }
+  },
+  "statusAfter": {
+    "ok": true,
+    "data": {
+      "authorized": true,
+      "signed": true,
+      "engine": "system"
+    }
+  },
+  "hasTracks": true
+}

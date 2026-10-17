@@ -1,0 +1,10 @@
+{
+  "readOnlyMount": true,
+  "copiedInstall": true,
+  "payloadMatches": true,
+  "signature": true,
+  "attribution": true,
+  "thirdPartySources": true,
+  "architecture": "arm64",
+  "version": "0.7.20-applemusic.beta.1"
+}
