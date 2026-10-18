@@ -1,6 +1,7 @@
 
 
 export default {
+  appleTiming: {"appleUnavailable": "无法读取简介歌词，请确认已连接 Apple Music 并允许控制系统“音乐”。","useTimestamps": "使用文本内的时间轴","fileError": "歌词文件读取失败，原有文本已保留。","title": "逐句歌词与时间轴", "instructions": "仅使用带可靠时间轴的歌词。先在 Folia 播放此曲，每句开始时点击“标记下一句”或聚焦“标记下一句”按钮后按空格；可撤销、修改秒数并试听。普通文本不会自动生成时间轴。", "readApple": "读取 Apple 简介歌词", "importFile": "导入歌词文件", "text": "歌词文本", "placeholder": "粘贴歌词，每句一行；或导入带时间轴的 LRC / TTML。", "tap": "标记下一句", "undo": "撤销上次打点", "align": "匹配当前歌词时间轴", "save": "保存并使用", "timeline": "逐句时间轴", "time": "第 {{line}} 句开始秒数", "audition": "试听", "pending": "待打点", "invalidTimes": "请为每句填写完整、递增且位于歌曲时长内的开始时间。", "failed": "操作失败，请重试。", "wrongSong": "请先在 Folia 播放这首歌曲；切歌或系统播放不一致时不能打点。", "order": "时间必须晚于上一句且位于歌曲时长内；可撤销或手动修改。", "appleEmpty": "此曲暂无可读取的简介歌词。Apple 官方歌词可能只在“音乐”App 内可见，请粘贴文本或导入同步歌词。", "appleLoaded": "已读取简介内容；带时间轴的内容可直接导入，其余文本需逐句打点。", "saved": "已按此 Apple 歌曲保存逐句歌词。", "needsTiming": "文本没有可靠的逐句时间轴，请在“逐句歌词与时间轴”中打点后保存。", "cannotAlign": "当前歌曲的歌词与文本无法逐句完整对应，不能套用时间轴；请手动打点。", "manualName": "逐句打点歌词", "importedName": "导入的同步歌词", "alignedName": "逐句校验匹配的歌词", "appleSource": "Apple 简介（同步歌词）", "timeThisText": "为此文本逐句打点"},
   appleSearch: {"region": "搜索地区", "description": "选择 Apple 目录搜索地区，不会更改 Apple 账号地区。目录歌曲的可播放性取决于账号地区；未加入资料库的歌曲会在系统“音乐”中打开。", "firstSearch": "请先确认搜索地区。默认中国大陆（CN），可选择其他地区；下次会记住你的选择。", "filter": "搜索国家、地区名称或代码，例如 TR", "apply": "使用此地区", "noRegions": "没有匹配的地区"},
   appleMusicRelease: {"intro": "Folia Apple Music 免费测试版。基于 chthollyphile 与 Folia 贡献者的开源作品，保留 AGPL-3.0 许可。", "music": {"title": "连接系统“音乐”", "description": "首次打开自动启动“音乐”并请求授权；使用你自己的 Apple Music 资料库，选歌后播放。"}, "lyrics": {"title": "网易云歌词匹配", "description": "音频仍由 Apple Music 播放，歌词支持逐字动效、外文名称辅助匹配及手动预览绑定。"}, "theme": {"title": "背景与主题", "description": "保留原有视觉效果；没有歌词也可按歌曲信息生成 AI 主题，需自行配置服务。"}, "credits": {"title": "感谢原作者与贡献者", "description": "原作者 chthollyphile 与 Folia 原项目贡献者。非官方改版；免费测试版未公证，首次运行须完成系统确认。"}},
   appleLyrics: {"title": "匹配网易云歌词", "description": "只更换歌词，仍由 Apple Music 播放。选择后自动记住。", "close": "关闭", "search": "搜索网易云歌词", "placeholder": "中文歌名、歌手、网易云单曲链接或歌曲 ID", "noResults": "没有找到结果，请尝试中文歌名、歌手名，或粘贴网易云单曲链接。", "searchFailed": "搜索失败，请重试。", "pureMusic": "纯音乐", "noLyrics": "此版本没有可用歌词，请选择其他结果。", "loadFailed": "歌词加载失败。", "saveFailed": "保存失败。", "candidates": "候选歌曲", "preview": "歌词预览", "loading": "正在加载…", "choose": "选择左侧歌曲，预览歌词后保存。", "save": "使用此歌词", "qualityManaged": "播放音质由系统“音乐”App 的设置控制。"},
@@ -602,6 +603,7 @@ export default {
       }
     },
     "commands": {
+      "apple-lyric-timing": { title: "逐句歌词与时间轴", description: "读取 Apple 简介歌词" },
       "search-region": { title: "搜索地区", description: "搜索国家、地区名称或代码，例如 TR" },
       "settings-ponder-hints": { "title": "思索教程提示", "description": "设置长按 G 的提示什么时候出现" },
       "ponder-hints-always": { "title": "思索提示：始终显示", "description": "所有可教学的控件都提示长按 G" },

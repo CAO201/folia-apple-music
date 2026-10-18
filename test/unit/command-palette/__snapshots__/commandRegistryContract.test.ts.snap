@@ -195,6 +195,7 @@ exports[`command palette registry contract > keeps the registered command order 
   "home-radio",
   "desktop-toggle-remote-control",
   "desktop-toggle-main-window-always-on-top",
+  "apple-lyric-timing",
   "panel-cover",
   "panel-controls",
   "panel-queue",

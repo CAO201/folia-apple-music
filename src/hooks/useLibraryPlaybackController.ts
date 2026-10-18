@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type { MotionValue } from 'framer-motion';
+import { refreshAppleTimedLyrics } from '../services/appleMusicLyricRefresh';
+import { parseSentenceLyrics } from '../utils/lyrics/appleTiming';
 import { LyricParserFactory } from '../utils/lyrics/LyricParserFactory';
 import { getFromCacheWithMigration, getLocalSong, getLocalSongs, removeFromCache, saveLocalSong, saveToCache } from '../services/db';
 import { getCachedCoverUrl, loadCachedOrFetchCover } from '../services/coverCache';
@@ -291,6 +293,10 @@ export function useLibraryPlaybackController({
         fallbackLyrics: LyricData | null = lyrics
     ): Promise<{ state: OnlineLyricsState | null; lyrics: LyricData | null; }> => {
         const state = await loadOnlineLyricsState(onlineSong);
+        if (onlineSong.sourceRef?.kind === 'online' && onlineSong.sourceRef.providerId === 'applemusic'
+            && ((state?.lyricsSource === 'imported' && state.importedLyrics) || state?.hasOnlineOverride)) {
+            return { state, lyrics: resolveOnlineLyrics(state, null) };
+        }
         const baseLyrics = await loadBaseOnlineLyrics(onlineSong, fallbackLyrics);
         return {
             state,
@@ -1102,13 +1108,19 @@ export function useLibraryPlaybackController({
         }
 
         try {
-            const importedLyrics = fileName.toLowerCase().endsWith('.txt')
+            const appleSong = currentSong.sourceRef?.kind === 'online' && currentSong.sourceRef.providerId === 'applemusic';
+            const importedLyrics = appleSong ? parseSentenceLyrics(content, currentSong.durationMs, resolveExplicitFileTimedLyricFormat(fileName)) : fileName.toLowerCase().endsWith('.txt')
                 ? await LyricParserFactory.parse({ type: 'embedded', textContent: content })
                 : await LyricParserFactory.parse({
                     type: 'local',
                     lrcContent: content,
                     formatHint: resolveExplicitFileTimedLyricFormat(fileName),
                 });
+            if (appleSong && importedLyrics) importedLyrics.appleLyricsOrigin = 'manual';
+            if (appleSong && !importedLyrics) {
+                setStatusMsg({ type: 'error', text: t('appleTiming.needsTiming') });
+                return;
+            }
             const previousState = await loadOnlineLyricsState(currentSong);
             const nextState: OnlineLyricsState = {
                 lyricsSource: 'imported',
@@ -1123,8 +1135,9 @@ export function useLibraryPlaybackController({
             };
             await saveOnlineLyricsState(currentSong, nextState);
 
-            const updatedSong = { ...currentSong, onlineLyricsState: nextState };
+            const updatedSong = { ...currentSong, onlineLyricsState: nextState, ...(appleSong ? { isPureMusic: false } : {}) };
             setCurrentSong(prev => isSamePlaybackSong(prev, currentSong) ? updatedSong : prev);
+            if (appleSong && !isSamePlaybackSong(usePlaybackStore.getState().currentSong, currentSong)) return;
             setLyrics(importedLyrics);
             setCurrentLineIndex(-1);
             await persistLastPlaybackCache(updatedSong, playQueue);
@@ -1133,7 +1146,7 @@ export function useLibraryPlaybackController({
             console.error('Failed to import online lyrics', error);
             setStatusMsg({ type: 'error', text: 'Failed to save lyrics' });
         }
-    }, [currentSong, persistLastPlaybackCache, playQueue, setCurrentLineIndex, setCurrentSong, setLyrics, setStatusMsg]);
+    }, [currentSong, persistLastPlaybackCache, playQueue, setCurrentLineIndex, setCurrentSong, setLyrics, setStatusMsg, t]);
 
     const handleChangeOnlineLyricsSource = useCallback(async (source: 'online' | 'imported') => {
         if (!currentSong || isStagePlaybackSong(currentSong) || isLocalPlaybackSong(currentSong) || isNavidromePlaybackSong(currentSong)) {
@@ -1159,9 +1172,12 @@ export function useLibraryPlaybackController({
 
         try {
             await saveOnlineLyricsState(currentSong, nextState);
-            const baseLyrics = await loadBaseOnlineLyrics(currentSong, lyrics);
+            const appleImported = currentSong.sourceRef?.kind === 'online' && currentSong.sourceRef.providerId === 'applemusic' && source === 'imported';
+            const baseLyrics = appleImported ? null : await loadBaseOnlineLyrics(currentSong, lyrics);
+            if (currentSong.sourceRef?.kind === 'online' && currentSong.sourceRef.providerId === 'applemusic'
+                && !isSamePlaybackSong(usePlaybackStore.getState().currentSong, currentSong)) return;
             const nextLyrics = resolveOnlineLyrics(nextState, baseLyrics);
-            const updatedSong = { ...currentSong, onlineLyricsState: nextState };
+            const updatedSong = { ...currentSong, onlineLyricsState: nextState, ...(appleImported ? { isPureMusic: false } : {}) };
             setCurrentSong(prev => isSamePlaybackSong(prev, currentSong) ? updatedSong : prev);
             setLyrics(nextLyrics);
             setCurrentLineIndex(-1);
@@ -1180,10 +1196,12 @@ export function useLibraryPlaybackController({
         }
 
         const resolved = await resolveOnlineSongLyricsState(currentSong, lyrics);
+        if (currentSong.sourceRef?.kind === 'online' && currentSong.sourceRef.providerId === 'applemusic'
+            && !isSamePlaybackSong(usePlaybackStore.getState().currentSong, currentSong)) return;
         const updatedSong = {
             ...currentSong,
             onlineLyricsState: resolved.state ?? undefined,
-            isPureMusic: resolved.state?.lyricsSource === 'online' && typeof resolved.state.matchedIsPureMusic === 'boolean'
+            isPureMusic: currentSong.sourceRef?.kind === 'online' && currentSong.sourceRef.providerId === 'applemusic' && resolved.state?.lyricsSource === 'imported' && resolved.lyrics ? false : resolved.state?.lyricsSource === 'online' && typeof resolved.state.matchedIsPureMusic === 'boolean'
                 ? resolved.state.matchedIsPureMusic
                 : currentSong.isPureMusic,
         };
@@ -1266,6 +1284,19 @@ export function useLibraryPlaybackController({
         setStatusMsg({ type: 'info', text: t('status.matchingBestLyrics') || '' });
 
         try {
+            if (currentSong.sourceRef?.kind === 'online' && currentSong.sourceRef.providerId === 'applemusic') {
+                const result = await refreshAppleTimedLyrics(currentSong);
+                if (!isSamePlaybackSong(usePlaybackStore.getState().currentSong, currentSong)) return false;
+                if (!result.lyrics && !result.isPureMusic) {
+                    setStatusMsg({ type: 'info', text: t('appleTiming.needsTiming') }); return false;
+                }
+                const updatedSong = { ...currentSong, onlineLyricsState: result.state || undefined, isPureMusic: result.isPureMusic };
+                setCurrentSong(prev => isSamePlaybackSong(prev, currentSong) ? updatedSong : prev);
+                setLyrics(result.lyrics); setCurrentLineIndex(-1);
+                await persistLastPlaybackCache(updatedSong, playQueue);
+                setStatusMsg({ type: 'success', text: t(result.isPureMusic ? 'status.bestLyricsPureMusic' : 'status.bestLyricsMatched') });
+                return true;
+            }
             if (isLocalPlaybackSong(currentSong)) {
                 // 读库里的最新记录：下面整条写回，不能带着 localSongs 里过期的字段（例如刚打的纯音乐标记）。
                 const localData = await resolveLatestLocalSongRecord(currentSong);

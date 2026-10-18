@@ -22,12 +22,12 @@ describe('NetEase lyrics with Apple Music audio identity', () => {
         const bridge = vi.fn().mockResolvedValueOnce({ ok: true, data: { songs: [matched] } })
             .mockResolvedValueOnce({ ok: true, data: { code: 200, yrc: { lyric: 'yrc payload' } } });
         vi.stubGlobal('window', { electron: { neteaseLyricsRequest: bridge } });
-        vi.mocked(processNeteaseLyrics).mockResolvedValue({ lyrics: { lines: [], isWordByWord: true } as any,
-            mainLrc: null, yrcLrc: 'yrc payload', transLrc: 'translation', isPureMusic: false });
+        vi.mocked(processNeteaseLyrics).mockResolvedValue({ lyrics: { lines: [{ fullText: 'Test', startTime: 0, endTime: 2, words: [{text:'Test',startTime:0,endTime:2}] }], isWordByWord: true },
+            mainLrc: null, yrcLrc: '[0,2000](0,2000,0)Test', transLrc: 'translation', isPureMusic: false });
         const result = await getAppleMusicLyrics(target);
         expect(bridge.mock.calls.map(call => call[0])).toEqual(['search', 'lyrics']);
         expect(bridge.mock.calls[1][1]).toEqual({ id: '123' });
-        expect(result.wordByWordText).toBe('yrc payload');
+        expect(result.wordByWordText).toBe('[0,2000](0,2000,0)Test');
         expect(result.translationText).toBe('translation');
         expect(target.sourceRef).toMatchObject({ providerId: 'applemusic', mediaId: 'APPLE' });
     });
@@ -38,7 +38,7 @@ describe('NetEase lyrics with Apple Music audio identity', () => {
         expect(bridge.mock.calls.every(call => call[0] === 'search')).toBe(true);
     });
     it('separates the new automatic lyric cache from previous community lyrics', () => {
-        expect(getSongResourceCacheKey('lyric', target)).toBe('lyric_netease_v1_online:applemusic:APPLE');
+        expect(getSongResourceCacheKey('lyric', target)).toBe('lyric_sentence_v2_online:applemusic:APPLE');
         expect(getSongResourceCacheKey('audio', target)).toBe('audio_online:applemusic:APPLE');
     });
 });

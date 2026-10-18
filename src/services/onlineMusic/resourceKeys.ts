@@ -8,7 +8,7 @@ export type SongResourceKind = 'audio' | 'lyric' | 'cover' | 'theme' | 'replayGa
 export const getSongResourceCacheKey = (kind: SongResourceKind, song: SongResult): string => {
     const sourceRef = getPlaybackSourceRef(song);
     if (kind === 'lyric' && sourceRef.kind === 'online' && sourceRef.providerId === 'applemusic') {
-        return `lyric_netease_v1_${getPlaybackSongKey(song)}`;
+        return `lyric_sentence_v2_${getPlaybackSongKey(song)}`;
     }
     const versionedKind = kind === 'cover'
         && sourceRef.kind === 'online'

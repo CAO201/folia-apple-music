@@ -9,6 +9,7 @@ import { requestAppleMusic, appleApi, appleCatalogPath, clearAppleMusicSession }
 import { normalizeAppleSong, normalizeAppleCollection, applePage } from './appleMusicNormalize';
 import { appleMusicCatalog } from './appleMusicCatalog';
 import { getAppleMusicLyrics } from './appleMusicLyrics';
+import { getAppleLibraryLyricDraft } from './appleLibraryLyrics';
 
 // src/services/onlineMusic/appleMusicProvider.ts
 let disconnected = false;
@@ -49,7 +50,7 @@ export const appleMusicProvider: OnlineMusicProvider = {
         },
     },
     externalPlayback: { control: (operation, params) => requestAppleMusic(operation, params), setVolume: (volume, muted) => requestAppleMusic('volume', { volume, muted }) },
-    lyrics: { getLyrics: getAppleMusicLyrics },
+    lyrics: { getLyrics: getAppleMusicLyrics, getDraft: getAppleLibraryLyricDraft },
     auth: {
         async authorize() {
             await requestAppleMusic('authorize');

@@ -576,6 +576,11 @@ export const omni = {
         return applyOmniLyricsHook(song, resolved);
     },
 
+    async getLyricDraft(song: SongResult) {
+        const provider = providerForSong(song);
+        return provider.lyrics?.getDraft?.(song) ?? null;
+    },
+
     async getChorusRanges(song: SongResult): Promise<OmniChorusRange[]> {
         const provider = providerForSong(song);
         return provider.lyrics?.getChorusRanges?.(song.id) ?? [];

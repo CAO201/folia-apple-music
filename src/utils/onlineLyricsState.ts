@@ -1,4 +1,5 @@
 import { getFromCacheWithMigration, saveToCache } from '../services/db';
+import { hasSentenceTimeline } from './lyrics/appleTiming';
 import { getSongResourceCacheKey } from '../services/onlineMusic/resourceKeys';
 import type { OnlineLyricsState, SongResult } from '../types';
 import type { MigrationResult } from './lyrics/renderHints';
@@ -24,11 +25,17 @@ const migrateOnlineLyricsState = (value: OnlineLyricsState): MigrationResult<Onl
 };
 
 export const getOnlineLyricsStateCacheKey = (song: SongResult) =>
-    `${getSongResourceCacheKey('lyric', song)}${ONLINE_LYRICS_STATE_SUFFIX}`;
+    `${getSongResourceCacheKey('lyric', song).replace('lyric_sentence_v2_', 'lyric_netease_v1_')}${ONLINE_LYRICS_STATE_SUFFIX}`;
 
 export const loadOnlineLyricsState = async (song: SongResult): Promise<OnlineLyricsState | null> => {
     const key = getOnlineLyricsStateCacheKey(song);
-    return getFromCacheWithMigration<OnlineLyricsState>(key, migrateOnlineLyricsState);
+    const state = await getFromCacheWithMigration<OnlineLyricsState>(key, migrateOnlineLyricsState);
+    if (!state || song.sourceRef?.kind !== 'online' || song.sourceRef.providerId !== 'applemusic') return state;
+    return { ...state,
+        importedLyrics: (!state.importedLyricsName?.toLowerCase().endsWith('.txt') || state.importedLyrics?.appleLyricsOrigin === 'manual') && hasSentenceTimeline(state.importedLyrics, song.durationMs) ? state.importedLyrics : null,
+        onlineOverrideLyrics: hasSentenceTimeline(state.onlineOverrideLyrics, song.durationMs) ? state.onlineOverrideLyrics : null,
+        hasOnlineOverride: Boolean(state.matchedIsPureMusic || hasSentenceTimeline(state.onlineOverrideLyrics, song.durationMs)),
+    };
 };
 
 export const saveOnlineLyricsState = async (song: SongResult, state: OnlineLyricsState): Promise<void> => {

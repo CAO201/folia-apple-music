@@ -1,3 +1,6 @@
+import { useAppleLyricEditorStore } from '../../stores/useAppleLyricEditorStore';
+import AppleLyricTimingEditor from './AppleLyricTimingEditor';
+import { usePlaybackStore } from '../../stores/usePlaybackStore';
 import React, { useMemo, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Search, RotateCcw } from 'lucide-react';
@@ -39,6 +42,8 @@ const OnlineLyricsTab: React.FC<OnlineLyricsTabProps> = ({
     isDaylight,
 }) => {
     const { t } = useTranslation();
+    const expanded = useAppleLyricEditorStore(state => state.expanded);
+    const currentOrigin = usePlaybackStore(state => state.lyrics?.appleLyricsOrigin);
 
     const activeTabBg = isDaylight ? 'bg-blue-500/15 text-blue-600' : 'bg-blue-500/20 text-blue-300';
     const tabContainerBg = isDaylight ? 'bg-black/5' : 'bg-white/5';
@@ -51,12 +56,12 @@ const OnlineLyricsTab: React.FC<OnlineLyricsTabProps> = ({
     const activeSource = onlineLyricsState?.lyricsSource === 'imported' && hasImportedLyrics ? 'imported' : 'online';
 
     const onlineSourceLabel = useMemo(() => {
-        if (song.sourceRef?.kind === 'online' && song.sourceRef.providerId === 'applemusic') return t('lyricProvider.netease');
+        if (song.sourceRef?.kind === 'online' && song.sourceRef.providerId === 'applemusic') return currentOrigin === 'apple-library' ? t('appleTiming.appleSource') : t('lyricProvider.netease');
         return getLyricProviderLabel(
             onlineLyricsState?.matchedLyricsSource ?? getSongNativeLyricProviderSource(song),
             onlineLyricsState?.matchedLyricsProviderPlatform,
         );
-    }, [onlineLyricsState, song, t]);
+    }, [onlineLyricsState, song, t, currentOrigin]);
 
     const availableSources = useMemo(
         () => (hasImportedLyrics
@@ -90,6 +95,11 @@ const OnlineLyricsTab: React.FC<OnlineLyricsTabProps> = ({
             animate={{ opacity: 1 }}
             className="flex flex-col gap-4 pt-0 px-2"
         >
+            {song.sourceRef?.kind === 'online' && song.sourceRef.providerId === 'applemusic' && <details open={expanded}
+                onToggle={event => useAppleLyricEditorStore.setState({ expanded: event.currentTarget.open })} className="rounded-lg border border-current/10 p-3">
+                <summary className="cursor-pointer text-xs font-semibold">{t('appleTiming.title')}</summary>
+                {expanded && <div className="mt-3"><AppleLyricTimingEditor key={String(song.sourceRef.mediaId)} song={song} onSaved={() => onChangeLyricsSource('imported')} /></div>}
+            </details>}
             <ReplayGainControl
                 values={song.replayGain}
                 mode={replayGainMode}

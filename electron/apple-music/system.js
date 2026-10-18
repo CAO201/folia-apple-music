@@ -82,6 +82,10 @@ function run(argv) {
             result = { data: matches.slice(offset, offset + limit).map(track), total: matches.length,
                 hasMore: offset + limit < matches.length, nextOffset: Math.min(matches.length, offset + limit) }; break;
         }
+        case 'lyrics': {
+            const item = lookup(p.id);
+            result = { text: String(item.lyrics() || ''), song: track(item) }; break;
+        }
         case 'detail': result = { data: [track(lookup(p.id))] }; break;
         case 'resolve': {
             const matches = music.search(library(), { for: String(p.title || ''), only: 'names' });

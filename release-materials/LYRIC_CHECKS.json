@@ -1,0 +1,28 @@
+{
+  "version": "0.7.20-applemusic.beta.3",
+  "isolatedProfile": true,
+  "samples": [
+    {
+      "ok": true,
+      "characters": 0,
+      "timedTextDetected": false
+    },
+    {
+      "ok": true,
+      "characters": 0,
+      "timedTextDetected": false
+    },
+    {
+      "ok": true,
+      "characters": 0,
+      "timedTextDetected": false
+    }
+  ],
+  "reconnected": false,
+  "requestedOperations": [
+    "api",
+    "lyrics"
+  ],
+  "cloudLyricsIncluded": false,
+  "playbackCommandsSent": false
+}

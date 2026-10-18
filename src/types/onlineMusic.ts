@@ -338,7 +338,13 @@ export interface OnlinePlaybackReportProvider {
     reportPlayback(song: SongResult, report: ProviderPlaybackReport): Promise<void>;
 }
 
+export interface ProviderLyricDraft {
+    text: string;
+    source: 'apple-library' | 'netease';
+    reason?: 'empty' | 'not-in-library' | 'unavailable' | 'untimed';
+}
 export interface OnlineLyricsProvider {
+    getDraft?(song: SongResult): Promise<ProviderLyricDraft>;
     getLyrics(song: SongResult, context?: { userId?: MediaId | null }): Promise<ProviderLyricsResult>;
     getChorusRanges?(songId: MediaId): Promise<ChorusRange[]>;
 }

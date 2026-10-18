@@ -1,6 +1,6 @@
 import type { SongResult } from '../types';
 import { loadOnlineLyricsState, saveOnlineLyricsState } from '../utils/onlineLyricsState';
-import { hasRenderableLyrics } from '../utils/lyrics/validity';
+import { hasDeclaredSentenceTimes, hasSentenceTimeline } from '../utils/lyrics/appleTiming';
 import { fetchAppleNeteaseLyrics, searchAppleNeteaseLyrics } from './onlineMusic/appleNeteaseLyricTools';
 
 // src/services/appleMusicLyricMatching.ts
@@ -11,7 +11,7 @@ export async function previewAppleLyricCandidate(candidate: SongResult) {
 }
 export async function saveAppleLyricCandidate(song: SongResult, candidate: SongResult) {
     const processed = await previewAppleLyricCandidate(candidate);
-    if (!hasRenderableLyrics(processed.lyrics) && !processed.isPureMusic) throw new Error('此版本没有可用歌词，请选择其他版本。');
+    if (!processed.isPureMusic && (!hasSentenceTimeline(processed.lyrics, song.durationMs) || !hasDeclaredSentenceTimes(processed.yrcLrc || processed.mainLrc || '', processed.yrcLrc ? 'yrc' : 'lrc'))) throw new Error('此版本没有可靠的逐句时间轴，请选择其他版本或逐句打点。');
     const previous = await loadOnlineLyricsState(song);
     await saveOnlineLyricsState(song, { ...previous, lyricsSource: 'online', hasOnlineOverride: true,
         onlineOverrideLyrics: processed.lyrics, matchedSongId: candidate.id, matchedIsPureMusic: processed.isPureMusic,

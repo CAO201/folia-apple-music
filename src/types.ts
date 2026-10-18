@@ -80,6 +80,7 @@ export interface Line {
 }
 
 export interface LyricData {
+  appleLyricsOrigin?: 'netease' | 'apple-library' | 'manual';
   lines: Line[];
   title?: string;
   artist?: string;

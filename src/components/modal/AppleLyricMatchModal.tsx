@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Search, Loader2 } from 'lucide-react';
+import { hasDeclaredSentenceTimes, hasSentenceTimeline } from '../../utils/lyrics/appleTiming';
+import AppleLyricTimingEditor from '../panelTab/AppleLyricTimingEditor';
 import type { SongResult } from '../../types';
 import { searchAppleLyricCandidates, previewAppleLyricCandidate, saveAppleLyricCandidate } from '../../services/appleMusicLyricMatching';
 
@@ -9,10 +11,15 @@ import { searchAppleLyricCandidates, previewAppleLyricCandidate, saveAppleLyricC
 interface Props { song: SongResult; onClose: () => void; onMatch: () => void; isDaylight: boolean }
 export default function AppleLyricMatchModal({ song, onClose, onMatch, isDaylight }: Props) {
     const { t } = useTranslation();
+    const [mode, setMode] = useState<'netease' | 'timing'>('netease');
+    const [seed, setSeed] = useState('');
+    useEffect(() => { if (mode === 'timing' && seed) setSeed(''); }, [mode, seed]);
     const [query, setQuery] = useState(`${song.name} ${song.artists.map(a => a.name).join(' ')}`);
     const [results, setResults] = useState<SongResult[]>([]);
     const [selected, setSelected] = useState<SongResult | null>(null);
     const [preview, setPreview] = useState('');
+    const [hasText, setHasText] = useState(false);
+    const [canSave, setCanSave] = useState(false);
     const [error, setError] = useState('');
     const [busy, setBusy] = useState(false);
     const generation = useRef(0);
@@ -23,7 +30,7 @@ export default function AppleLyricMatchModal({ song, onClose, onMatch, isDayligh
     }, [onClose]);
     const search = async () => {
         const request = ++generation.current;
-        setBusy(true); setError(''); setResults([]); setSelected(null); setPreview('');
+        setBusy(true); setError(''); setResults([]); setSelected(null); setPreview(''); setHasText(false); setCanSave(false);
         try {
             const songs = await searchAppleLyricCandidates(query);
             if (request !== generation.current) return;
@@ -34,11 +41,16 @@ export default function AppleLyricMatchModal({ song, onClose, onMatch, isDayligh
     };
     const select = async (candidate: SongResult) => {
         const request = ++generation.current;
-        setSelected(candidate); setPreview(''); setError(''); setBusy(true);
+        setSelected(candidate); setPreview(''); setHasText(false); setCanSave(false); setError(''); setBusy(true);
         try {
             const data = await previewAppleLyricCandidate(candidate);
             if (request !== generation.current) return;
-            setPreview(data.lyrics?.lines.map(line => line.fullText).join('\n') || (data.isPureMusic ? t('appleLyrics.pureMusic') : t('appleLyrics.noLyrics')));
+            const text = data.lyrics?.lines.map(line => line.fullText).join('\n') || data.mainLrc || '';
+            const timed = hasSentenceTimeline(data.lyrics, song.durationMs)
+                && hasDeclaredSentenceTimes(data.yrcLrc || data.mainLrc || '', data.yrcLrc ? 'yrc' : 'lrc');
+            setHasText(Boolean(text) && !data.isPureMusic); setCanSave(data.isPureMusic || timed);
+            setPreview(text || (data.isPureMusic ? t('appleLyrics.pureMusic') : t('appleLyrics.noLyrics')));
+            if (text && !timed && !data.isPureMusic) setError(t('appleTiming.needsTiming'));
         } catch (e) { if (request === generation.current) setError(e instanceof Error ? e.message : t('appleLyrics.loadFailed')); }
         finally { if (request === generation.current) setBusy(false); }
     };
@@ -50,10 +62,15 @@ export default function AppleLyricMatchModal({ song, onClose, onMatch, isDayligh
         catch (e) { if (request === generation.current) setError(e instanceof Error ? e.message : t('appleLyrics.saveFailed')); }
         finally { if (request === generation.current) setBusy(false); }
     };
-    return <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-6" role="dialog" aria-modal="true" aria-label={t('appleLyrics.title')}>
-        <div className={`w-full max-w-3xl rounded-2xl border p-5 shadow-2xl ${isDaylight ? 'bg-white text-zinc-900 border-black/10' : 'bg-zinc-900 text-white border-white/10'}`}>
-            <div className="flex items-center justify-between mb-2"><h2 className="font-bold">{t('appleLyrics.title')}</h2><button aria-label={t('appleLyrics.close')} onClick={onClose}><X size={20} /></button></div>
+    return <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-6" role="dialog" aria-modal="true" aria-label={t(mode === 'timing' ? 'appleTiming.title' : 'appleLyrics.title')}>
+        <div className={`w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border p-5 shadow-2xl ${isDaylight ? 'bg-white text-zinc-900 border-black/10' : 'bg-zinc-900 text-white border-white/10'}`}>
+            <div className="flex items-center justify-between mb-2"><h2 className="font-bold">{t(mode === 'timing' ? 'appleTiming.title' : 'appleLyrics.title')}</h2><button aria-label={t('appleLyrics.close')} onClick={onClose}><X size={20} /></button></div>
             <p className="text-xs opacity-60 mb-4">{song.name} · {song.artists.map(a => a.name).join(' / ')} — {t('appleLyrics.description')}</p>
+            <div className="mb-3 flex gap-2 text-xs">
+                <button className="rounded-lg border border-current/20 p-2" onClick={() => setMode('netease')}>{t('appleLyrics.search')}</button>
+                <button className="rounded-lg border border-current/20 p-2" onClick={() => setMode('timing')}>{t('appleTiming.title')}</button>
+            </div>
+            {mode === 'timing' ? <AppleLyricTimingEditor song={song} onSaved={onMatch} seed={seed} /> : <>
             <form className="flex gap-2 mb-3" onSubmit={e => { e.preventDefault(); void search(); }}>
                 <input aria-label={t('appleLyrics.search')} className="flex-1 min-w-0 rounded-lg bg-black/10 border border-current/10 p-2 text-sm" autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder={t('appleLyrics.placeholder')} />
                 <button className="rounded-lg px-4 bg-blue-500/20 disabled:opacity-40" disabled={busy || !query.trim()} type="submit"><Search size={18} /></button>
@@ -66,7 +83,8 @@ export default function AppleLyricMatchModal({ song, onClose, onMatch, isDayligh
                 </button>)}</div>
                 <pre className="overflow-y-auto whitespace-pre-wrap text-sm leading-7 opacity-75 bg-black/5 rounded-lg p-3" aria-label={t('appleLyrics.preview')}>{busy ? t('appleLyrics.loading') : preview || t('appleLyrics.choose')}</pre>
             </div>
-            <div className="flex items-center justify-end gap-3 mt-4">{busy && <Loader2 className="animate-spin" size={16} />}<button className="px-4 py-2 rounded-lg bg-blue-500/25 disabled:opacity-30" disabled={!selected || busy} onClick={() => void save()}>{t('appleLyrics.save')}</button></div>
+            {selected && hasText && !busy && <button className="mt-3 text-xs underline" onClick={() => { setSeed(preview); setMode('timing'); }}>{t('appleTiming.timeThisText')}</button>}
+            <div className="flex items-center justify-end gap-3 mt-4">{busy && <Loader2 className="animate-spin" size={16} />}<button className="px-4 py-2 rounded-lg bg-blue-500/25 disabled:opacity-30" disabled={!selected || !canSave || busy} onClick={() => void save()}>{t('appleLyrics.save')}</button></div></>}
         </div>
     </div>;
 }

@@ -8,7 +8,7 @@ import vm from 'node:vm';
 const script = fs.readFileSync('electron/apple-music/system.js', 'utf8');
 const song = { persistentID: 'AF12345678901234', name: 'Song', artist: 'Artist', album: 'Album', duration: 123 };
 function fixture() {
-    const track = { properties: () => song, persistentID: () => song.persistentID };
+    const track = { lyrics: () => '[00:01.00]First\n[00:05.00]Second', properties: () => song, persistentID: () => song.persistentID };
     const tracks: any = { length: 1, 0: track, whose: () => [track],
         persistentID: () => [song.persistentID], name: () => [song.name], artist: () => [song.artist], album: () => [song.album], duration: () => [song.duration] };
     const playlist = { tracks, specialKind: () => 'none', properties: () => ({ persistentID: 'playlist-id', name: 'Playlist' }) };
@@ -27,6 +27,14 @@ describe('Music.app scripting adapter', () => {
         expect(page.data[0]).toEqual({ id: song.persistentID, type: 'library-songs', attributes: {
             name: 'Song', artistName: 'Artist', albumName: 'Album', durationInMillis: 123000,
         } });
+    });
+    it('reads the requested track lyrics without changing playback', () => {
+        const music = fixture(); const context: any = { Application: () => music };
+        vm.runInNewContext(script, context);
+        const result = JSON.parse(context.run([JSON.stringify({ operation: 'lyrics', params: { id: song.persistentID } })]));
+        expect(result.text).toContain('[00:01.00]');
+        expect(result.song.id).toBe(song.persistentID);
+        expect(music.play).not.toHaveBeenCalled(); expect(music.pause).not.toHaveBeenCalled();
     });
     it('plays an exact persistent library ID once and reads the real clock', () => {
         const music = fixture();

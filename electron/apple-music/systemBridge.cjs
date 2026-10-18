@@ -121,6 +121,19 @@ function createSystemMusicBridge({ app, store, shell, net, localCoverAssetStore,
         if (result.total !== undefined) result.meta = { total: result.total };
         return { ok: true, data: result };
       }
+      if (operation === 'lyrics') {
+        let id = String(params.mediaId || '');
+        if (id.startsWith('catalog:')) {
+          const resource = catalog.get(id);
+          if (!resource) return { ok: true, data: { text: '', reason: 'not-in-library' } };
+          const a = resource.attributes;
+          const match = await call('resolve', { title: a.name, artist: a.artistName, duration: a.durationInMillis }, 15000);
+          if (!match) return { ok: true, data: { text: '', reason: 'not-in-library' } };
+          id = match.id;
+        }
+        if (!/^[A-F0-9]{16}$/i.test(id)) return failure('unsupported', '此歌曲的简介歌词当前无法读取。');
+        return { ok: true, data: await call('lyrics', { id }, 15000) };
+      }
       if (operation === 'play') {
         selected = params.mediaId;
         if (selected.startsWith('catalog:')) {
@@ -155,7 +168,7 @@ function createSystemMusicBridge({ app, store, shell, net, localCoverAssetStore,
     } catch (error) { return failure('unavailable', error.message); }
   }
   function request(operation, params) {
-    if (operation === 'api') return execute(operation, params);
+    if (operation === 'api' || operation === 'lyrics') return execute(operation, params);
     const result = serial.then(() => execute(operation, params));
     serial = result.catch(() => {});
     return result;
