@@ -1,6 +1,7 @@
 
 
 export default {
+  appleSearch: {"region": "Wilayah pencarian", "description": "Pilih wilayah katalog Apple. Wilayah akun Apple tidak berubah. Lagu di luar perpustakaan dibuka di Musik.", "firstSearch": "Konfirmasi wilayah pencarian. Default Tiongkok daratan (CN). Pilihan disimpan.", "filter": "Cari negara, wilayah atau kode, misalnya TR", "apply": "Terapkan wilayah", "noRegions": "Wilayah tidak ditemukan"},
   appleMusicRelease: {"intro": "Folia Apple Music test edition, based on Folia by chthollyphile and contributors. Licensed under AGPL-3.0.", "music": {"title": "Connect the Music app", "description": "Launches Music and requests authorization on first use. Uses your own library and starts audio only after you choose a song."}, "lyrics": {"title": "NetEase lyric matching", "description": "Apple Music supplies audio. NetEase supplies available timed lyrics, with multilingual matching and manual preview and binding."}, "theme": {"title": "Backgrounds and themes", "description": "Keeps the original visuals. AI themes can use song metadata without lyrics; configure your own AI service."}, "credits": {"title": "Thanks to the original creators", "description": "Original author: chthollyphile and the Folia contributors. Unofficial, non-notarized test edition; complete the macOS prompts on first launch."}},
   appleLyrics: {"title": "Match NetEase lyrics", "description": "Changes lyrics only; Apple Music keeps playing. Your selection is remembered.", "close": "Close", "search": "Search NetEase lyrics", "placeholder": "Song, artist, NetEase song link or song ID", "noResults": "No results. Try a Chinese title, artist, or NetEase song link.", "searchFailed": "Search failed. Please retry.", "pureMusic": "Instrumental", "noLyrics": "No lyrics for this version. Choose another result.", "loadFailed": "Could not load lyrics.", "saveFailed": "Could not save lyrics.", "candidates": "Candidate songs", "preview": "Lyric preview", "loading": "Loading…", "choose": "Select a song to preview lyrics before saving.", "save": "Use these lyrics", "qualityManaged": "Playback quality is controlled by the system Music app."},
   "libraryBravais": {
@@ -598,6 +599,7 @@ export default {
       }
     },
     "commands": {
+      "search-region": { title: "Wilayah pencarian", description: "Cari negara, wilayah atau kode, misalnya TR" },
       "settings-ponder-hints": { "title": "Petunjuk tutorial Ponder", "description": "Atur kapan petunjuk tahan G muncul" },
       "ponder-hints-always": { "title": "Petunjuk Ponder: selalu tampilkan", "description": "Tampilkan petunjuk tahan G pada setiap kontrol yang bisa dipelajari" },
       "ponder-hints-unseen": { "title": "Petunjuk Ponder: hanya yang belum dilihat", "description": "Berhenti memberi petunjuk setelah tutorialnya ditonton" },

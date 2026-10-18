@@ -77,7 +77,10 @@ function run(argv) {
         }
         case 'search': {
             const matches = music.search(library(), { for: String(p.term || ''), only: 'all' });
-            result = page(matches.map(track)); break;
+            const offset = Math.max(0, Number(p.offset) || 0);
+            const limit = Math.min(100, Math.max(1, Number(p.limit) || 50));
+            result = { data: matches.slice(offset, offset + limit).map(track), total: matches.length,
+                hasMore: offset + limit < matches.length, nextOffset: Math.min(matches.length, offset + limit) }; break;
         }
         case 'detail': result = { data: [track(lookup(p.id))] }; break;
         case 'resolve': {

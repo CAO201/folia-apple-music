@@ -74,6 +74,7 @@ export interface ProviderAccountSummary {
 }
 
 export interface ProviderPage<T> {
+    warning?: string;
     items: T[];
     total?: number;
     hasMore: boolean;

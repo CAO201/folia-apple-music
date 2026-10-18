@@ -1,3 +1,5 @@
+import { defineCommand } from '../commandFactories';
+import { appleSearchRegionSurface } from '../surfaces/appleSearchRegionSurface';
 import { Search } from 'lucide-react';
 import type { SearchSource } from '../../../stores/useSearchNavigationStore';
 import type { CommandPaletteCommand, CommandPaletteContext, CommandPaletteSearchSource } from '../types';
@@ -12,7 +14,7 @@ const getSearchSourceLabel = (sourceTab: SearchSource, context: CommandPaletteCo
     if (sourceTab === 'navidrome') {
         return context.shared.t('commandPalette.sourceNavidrome', 'Navidrome');
     }
-    return context.shared.t('commandPalette.sourceNetease', 'NetEase Cloud Music');
+    return 'Apple Music';
 };
 
 const buildSearchPreview = (
@@ -40,6 +42,7 @@ const runSearch = async (
     sourceTab: CommandPaletteSearchSource,
     context: CommandPaletteContext
 ) => {
+    sourceTab = 'applemusic';
     const trimmedQuery = query.trim();
     if (!trimmedQuery) {
         return false;
@@ -98,6 +101,11 @@ const createSearchCommand = (
 });
 
 export const searchCommands: CommandPaletteCommand[] = [
+    defineCommand({
+        id: 'search-region', group: 'search', title: 'Search region', description: 'Choose Apple Music storefront',
+        keywords: ['storefront', 'country', '地区', '区域', '国家'], icon: Search,
+        surface: appleSearchRegionSurface, execute: () => false,
+    }),
     createSearchCommand('search-current', 'Search songs', 'Search songs in the current source', ['search', 'find', 'song', '搜索', '搜歌'], context => context.search.currentSearchSourceTab, { executeShortcut: 'f' }),
     createSearchCommand('search-local', 'Search local songs', 'Search local library', ['local', 'local search', 'search local', '本地', '本地音乐'], () => 'local'),
     createSearchCommand('search-navidrome', 'Search Navidrome songs', 'Search Navidrome library', ['navi', 'navidrome', 'search navidrome', '导航', '服务器'], () => 'navidrome'),

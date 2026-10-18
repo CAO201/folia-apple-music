@@ -2,6 +2,7 @@ const { execFile } = require('node:child_process');
 const path = require('node:path');
 const fs = require('node:fs');
 const { createMusicArtwork } = require('./artwork.cjs');
+const { createAppleSearch } = require('./search.cjs');
 
 // electron/apple-music/systemBridge.cjs
 // Music.app exposes its library and transport through its public scripting dictionary.
@@ -17,14 +18,22 @@ function createSystemMusicBridge({ app, store, shell, net, localCoverAssetStore,
   const catalog = new Map();
   const coverCache = new Map();
   const failure = (code, message) => ({ ok: false, error: { code, message } });
-  const call = (operation, params) => new Promise((resolve, reject) => {
+  const call = (operation, params, timeout = 60000) => new Promise((resolve, reject) => {
     execFile('/usr/bin/osascript', ['-l', 'JavaScript', '-e', fs.readFileSync(path.join(__dirname, 'system.js'), 'utf8'), JSON.stringify({ operation, params })],
-      { timeout: 60000, maxBuffer: 12 * 1024 * 1024, env: process.env }, (error, stdout) => {
+      { timeout, maxBuffer: 12 * 1024 * 1024, env: process.env }, (error, stdout) => {
         if (error) return reject(new Error(error.code === -1743 || error.message.includes('-1743')
           ? '请在系统设置 → 隐私与安全性 → 自动化中，允许 Folia Apple Music 控制“音乐”。'
           : error.killed ? '“音乐”App 响应超时，请打开“音乐”后重试。' : error.message));
         try { resolve(JSON.parse(stdout)); } catch { reject(new Error('无法读取“音乐”App 的响应。')); }
       });
+  });
+  const search = createAppleSearch({
+    fetch: (...args) => net.fetch(...args),
+    searchLibrary: params => call('search', params, 15000),
+    register: resource => {
+      catalog.set(resource.id, resource);
+      if (catalog.size > 1000) catalog.delete(catalog.keys().next().value);
+    },
   });
   async function searchCatalog(query) {
     const url = new URL('https://itunes.apple.com/search');
@@ -82,14 +91,7 @@ function createSystemMusicBridge({ app, store, shell, net, localCoverAssetStore,
         const p = params.path;
         let result;
         if (/\/search$/.test(p)) {
-          const library = await call('search', { term: q.term, limit: 25, offset: Number(q.offset || 0) });
-          let extras = [];
-          if (Number(q.offset || 0) === 0) {
-            try { extras = await searchCatalog(q); } catch { /* Library search works without the catalog network. */ }
-          }
-          const libraryNames = new Set(library.data.map(r => `${r.attributes.name}\0${r.attributes.artistName}`));
-          result = { results: { songs: { data: [...library.data, ...extras.filter(r => !libraryNames.has(`${r.attributes.name}\0${r.attributes.artistName}`))],
-            ...(library.hasMore ? { next: 'library-next' } : {}), meta: { total: library.total } } } };
+          result = { results: { songs: await search(q, p.match(/^\/v1\/catalog\/([^/]+)\/search$/)?.[1] || 'cn') } };
         } else if (p === '/v1/me/library/playlists') {
           result = await call('playlists', q);
         } else if (p === '/v1/me/library/albums') {

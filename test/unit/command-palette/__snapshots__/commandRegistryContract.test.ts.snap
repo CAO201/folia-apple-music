@@ -33,6 +33,7 @@ exports[`command palette registry contract > keeps the registered command order 
   "artist-reload",
   "artist-retry-albums",
   "artist-edit-entity",
+  "search-region",
   "search-current",
   "search-local",
   "search-navidrome",

@@ -34,5 +34,5 @@ export function normalizeAppleCollection(raw: unknown, kind?: string): ProviderC
 }
 export function applePage<T>(response: AppleResponse, normalize: (resource: AppleResource) => T, offset: number): ProviderPage<T> {
     const items = (response.data || []).map(normalize);
-    return { items, total: response.meta?.total, hasMore: Boolean(response.next), nextOffset: offset + items.length };
+    return { items, warning: response.meta?.warning, total: response.meta?.total, hasMore: Boolean(response.next), nextOffset: offset + items.length };
 }

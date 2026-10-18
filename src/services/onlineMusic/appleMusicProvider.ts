@@ -1,4 +1,6 @@
 import i18n from '../../i18n/config';
+import { useAppleSearchSettingsStore } from '../../stores/useAppleSearchSettingsStore';
+import { alternateAppleSearchQuery } from '../../utils/appleSearchQueries';
 import type { OnlineMusicProvider, ProviderUser } from '../../types/onlineMusic';
 import { OnlineProviderError } from '../../types/onlineMusic';
 import type { AppleResponse } from '../../types/appleMusic';
@@ -23,8 +25,8 @@ export const appleMusicProvider: OnlineMusicProvider = {
     search: {
         async searchSongs(query, limit, offset) {
             if (!query.trim()) return { items: [], hasMore: false, nextOffset: offset };
-            const response = await appleApi<{ results?: { songs?: AppleResponse } }>(await appleCatalogPath('search'), {
-                term: query, types: 'songs', limit: String(Math.min(25, limit)), offset: String(offset), include: 'albums,artists',
+            const response = await appleApi<{ results?: { songs?: AppleResponse } }>(`/v1/catalog/${useAppleSearchSettingsStore.getState().region.toLowerCase()}/search`, {
+                term: query, alternateTerm: alternateAppleSearchQuery(query) || '', types: 'songs', limit: String(Math.min(25, limit)), offset: String(offset), include: 'albums,artists',
             });
             return applePage(response.results?.songs || {}, normalizeAppleSong, offset);
         },

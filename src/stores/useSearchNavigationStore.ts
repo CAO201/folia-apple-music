@@ -1,3 +1,4 @@
+import { useAppleSearchSettingsStore } from './useAppleSearchSettingsStore';
 import { create } from 'zustand';
 import { getNavidromeConfig, navidromeApi } from '../services/navidromeService';
 import type { HomeViewTab, LocalSong, SongResult, UnifiedSong } from '../types';
@@ -22,12 +23,14 @@ type SearchExecutorDeps = {
 };
 
 type SearchExecutionResult = {
+    warning?: string;
     results: UnifiedSong[];
     hasMore: boolean;
     nextOffset: number;
 };
 
 type SearchCacheEntry = {
+    warning?: string;
     results: UnifiedSong[];
     offset: number;
     hasMore: boolean;
@@ -62,7 +65,7 @@ interface SearchNavigationState {
 }
 
 const getSearchCacheKey = (query: string, sourceTab: SearchSource) => (
-    `${sourceTab}:${query.trim().toLowerCase()}`
+    `${sourceTab}:${useAppleSearchSettingsStore.getState().region}:${query.trim().toLowerCase()}`
 );
 
 export const resolveSearchSource = (tab: HomeViewTab | SearchSource): SearchSource => {
@@ -70,7 +73,7 @@ export const resolveSearchSource = (tab: HomeViewTab | SearchSource): SearchSour
         return tab;
     }
     if (tab !== 'playlist' && tab !== 'albums' && tab !== 'radio') return tab as OnlineProviderId;
-    return 'netease';
+    return 'applemusic';
 };
 
 export const resolveCommandPaletteSearchSource = (
@@ -78,10 +81,10 @@ export const resolveCommandPaletteSearchSource = (
     searchSourceTab: SearchSource,
     activeOnlineProviderId: OnlineProviderId,
 ): SearchSource => {
-    if (currentSong && isLocalPlaybackSong(currentSong)) return 'local';
-    if (currentSong && isNavidromePlaybackSong(currentSong)) return 'navidrome';
+    if (currentSong && isLocalPlaybackSong(currentSong)) return 'applemusic';
+    if (currentSong && isNavidromePlaybackSong(currentSong)) return 'applemusic';
     if (currentSong || searchSourceTab === 'netease') return activeOnlineProviderId;
-    return searchSourceTab;
+    return 'applemusic';
 };
 
 const mapLocalSongToUnifiedSong = (
@@ -145,7 +148,7 @@ const searchOnlineProviderSongs = async (
     offset: number,
 ): Promise<SearchExecutionResult> => {
     const page = await omni.searchProviderSongs(providerId, query, { limit, offset });
-    return { results: page.items, hasMore: page.hasMore, nextOffset: page.nextOffset };
+    return { results: page.items, hasMore: page.hasMore, nextOffset: page.nextOffset, warning: page.warning };
 };
 
 const executeSearch = async (
@@ -179,7 +182,7 @@ const getInitialHomeViewTab = (): HomeViewTab => {
 export const useSearchNavigationStore = create<SearchNavigationState>((set, get) => ({
     homeViewTab: getInitialHomeViewTab(),
     searchQuery: '',
-    searchSourceTab: 'netease',
+    searchSourceTab: 'applemusic',
     searchResults: null,
     searchReturnView: 'home',
     isSearchOpen: false,
@@ -212,7 +215,8 @@ export const useSearchNavigationStore = create<SearchNavigationState>((set, get)
                 : state.searchCache,
         };
     }),
-    restoreSearch: ({ query, sourceTab, returnView = 'home' }) => set(state => {
+    restoreSearch: ({ query, returnView = 'home' }) => set(state => {
+        const sourceTab = 'applemusic';
         const cached = state.searchCache[getSearchCacheKey(query, sourceTab)];
         return {
             searchQuery: query,
@@ -222,7 +226,7 @@ export const useSearchNavigationStore = create<SearchNavigationState>((set, get)
             offset: cached?.offset ?? 0,
             hasMore: cached?.hasMore ?? false,
             scrollTop: cached?.scrollTop ?? 0,
-            searchError: null,
+            searchError: cached?.warning ?? null,
             isSearching: false,
             isLoadingMore: false,
             isSearchOpen: true,
@@ -253,6 +257,7 @@ export const useSearchNavigationStore = create<SearchNavigationState>((set, get)
             : { searchSourceTab: providerId }
     )),
     submitSearch: async ({ query, sourceTab, deps, returnView = 'home' }) => {
+        sourceTab = 'applemusic';
         const trimmedQuery = (query ?? get().searchQuery).trim();
         if (!trimmedQuery) {
             return false;
@@ -274,6 +279,10 @@ export const useSearchNavigationStore = create<SearchNavigationState>((set, get)
             scrollTop: 0,
         });
 
+        if (!useAppleSearchSettingsStore.getState().confirmed) {
+            set({ isSearching: false });
+            return true;
+        }
         try {
             const result = await executeSearch(trimmedQuery, sourceTab, 0, get().limit, deps);
             if (get().requestId !== requestId) {
@@ -281,6 +290,7 @@ export const useSearchNavigationStore = create<SearchNavigationState>((set, get)
             }
             set(state => ({
                 searchResults: result.results,
+                searchError: result.warning || null,
                 hasMore: result.hasMore,
                 offset: result.nextOffset,
                 isSearching: false,
@@ -288,6 +298,7 @@ export const useSearchNavigationStore = create<SearchNavigationState>((set, get)
                     ...state.searchCache,
                     [getSearchCacheKey(trimmedQuery, sourceTab)]: {
                         results: result.results,
+                        warning: result.warning,
                         hasMore: result.hasMore,
                         offset: result.nextOffset,
                         scrollTop: 0,
@@ -345,6 +356,7 @@ export const useSearchNavigationStore = create<SearchNavigationState>((set, get)
                 const results = [...(searchResults || []), ...result.results];
                 return {
                     searchResults: results,
+                    searchError: result.warning || null,
                     hasMore: result.hasMore,
                     offset: result.nextOffset,
                     isLoadingMore: false,
@@ -352,6 +364,7 @@ export const useSearchNavigationStore = create<SearchNavigationState>((set, get)
                         ...state.searchCache,
                         [getSearchCacheKey(searchQuery, searchSourceTab)]: {
                             results,
+                            warning: result.warning,
                             hasMore: result.hasMore,
                             offset: result.nextOffset,
                             scrollTop: state.scrollTop,
@@ -370,3 +383,12 @@ export const useSearchNavigationStore = create<SearchNavigationState>((set, get)
         }
     },
 }));
+
+// Changing storefront cancels pending UI updates before the next query can start.
+useAppleSearchSettingsStore.subscribe((state, previous) => {
+    if (state.region === previous.region) return;
+    useSearchNavigationStore.setState(current => ({
+        requestId: current.requestId + 1, searchResults: null, searchCache: {},
+        searchError: null, isSearching: false, isLoadingMore: false, offset: 0, hasMore: false, scrollTop: 0,
+    }));
+});

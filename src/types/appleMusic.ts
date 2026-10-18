@@ -17,4 +17,4 @@ export interface AppleResource {
     };
     relationships?: Record<string, { data?: AppleResource[]; next?: string }>;
 }
-export interface AppleResponse { data?: AppleResource[]; next?: string; meta?: { total?: number } }
+export interface AppleResponse { data?: AppleResource[]; next?: string; meta?: { total?: number; warning?: string } }

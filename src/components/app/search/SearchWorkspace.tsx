@@ -11,8 +11,8 @@ import {
 } from '../../../stores/useSearchNavigationStore';
 import SearchResultsList from './SearchResultsList';
 import { useCollectionNavigationStore } from '../../../stores/useCollectionNavigationStore';
-import { useOnlineProviderAccountStore } from '../../../stores/useOnlineProviderAccountStore';
-import { omni } from '../../../services/onlineMusic/omni';
+import AppleSearchRegionControl from './AppleSearchRegionControl';
+import { useAppleSearchSettingsStore } from '../../../stores/useAppleSearchSettingsStore';
 
 // src/components/app/search/SearchWorkspace.tsx
 
@@ -49,7 +49,6 @@ const SearchWorkspace: React.FC<SearchWorkspaceProps> = ({
     const { t } = useTranslation();
     const {
         searchQuery,
-        searchSourceTab,
         searchResults,
         isSearchOpen,
         isSearching,
@@ -76,14 +75,8 @@ const SearchWorkspace: React.FC<SearchWorkspaceProps> = ({
         const raw = searchResults || [];
         return resolveTrackDisplay ? raw.map(resolveTrackDisplay) : raw;
     }, [resolveTrackDisplay, searchResults]);
-    const activeOnlineProviderId = useOnlineProviderAccountStore(state => state.activeProviderId);
-    const sources = useMemo<SearchSource[]>(() => [activeOnlineProviderId, 'local', 'navidrome'], [activeOnlineProviderId]);
+    const confirmed = useAppleSearchSettingsStore(state => state.confirmed);
     const hasCollection = useCollectionNavigationStore(state => Boolean(state.snapshot?.stack.length));
-    const getSourceLabel = (source: SearchSource) => {
-        if (source === 'local') return t('search.sourceLocal');
-        if (source === 'navidrome') return t('search.sourceNavidrome');
-        return omni.getProviderLabel(source);
-    };
 
     useEffect(() => {
         if (!isSearchOpen || hasCollection) return;
@@ -149,43 +142,20 @@ const SearchWorkspace: React.FC<SearchWorkspaceProps> = ({
                             </button>
                         </div>
 
-                        <nav className="flex gap-2 overflow-x-auto pb-1">
-                            {sources.map(source => (
-                                <button
-                                    type="button"
-                                    key={source}
-                                    onClick={() => {
-                                        if (source !== searchSourceTab) {
-                                            onSubmitSearch(source);
-                                        }
-                                    }}
-                                    className={`rounded-full px-4 py-2 text-xs font-medium transition-colors ${
-                                        source === searchSourceTab
-                                            ? 'shadow-sm'
-                                            : isDaylight
-                                                ? 'bg-black/5 text-black/60 hover:bg-black/10'
-                                                : 'bg-white/5 text-white/60 hover:bg-white/10'
-                                    }`}
-                                    style={source === searchSourceTab ? {
-                                        backgroundColor: theme.accentColor,
-                                        color: theme.backgroundColor,
-                                    } : undefined}
-                                >
-                                    {getSourceLabel(source)}
-                                </button>
-                            ))}
-                        </nav>
+                        <AppleSearchRegionControl onApply={() => onSubmitSearch('applemusic')} />
                     </header>
 
                     <div className="mx-auto mt-3 min-h-0 w-full max-w-5xl flex-1">
-                        {isSearching ? (
+                        {!confirmed ? (
+                            <div />
+                        ) : isSearching ? (
                             <div className="flex h-full items-center justify-center">
                                 <Loader2 className="h-9 w-9 animate-spin opacity-45" />
                             </div>
                         ) : searchError && results.length === 0 ? (
                             <div className="flex h-full flex-col items-center justify-center gap-3 text-center opacity-65">
                                 <AlertCircle size={32} />
-                                <p>{t('search.error')}</p>
+                                <p>{searchError}</p>
                                 <button
                                     type="button"
                                     onClick={() => onSubmitSearch()}
@@ -212,19 +182,8 @@ const SearchWorkspace: React.FC<SearchWorkspaceProps> = ({
                                         onOpenAlbum={onOpenAlbum}
                                     />
                                 </div>
-                                {searchError ? (
-                                    <div className="flex shrink-0 items-center justify-center gap-3 py-3 text-sm">
-                                        <span className="opacity-60">{t('search.error')}</span>
-                                        <button
-                                            type="button"
-                                            disabled={isLoadingMore}
-                                            onClick={onLoadMore}
-                                            className="rounded-full border border-current/15 px-4 py-2 disabled:opacity-50"
-                                        >
-                                            {t('search.retry')}
-                                        </button>
-                                    </div>
-                                ) : hasMore && (
+                                {searchError && <p role="status" className="py-2 text-center text-sm opacity-70">{searchError}</p>}
+                                {hasMore && (
                                     <div className="flex shrink-0 justify-center py-3">
                                         <button
                                             type="button"

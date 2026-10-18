@@ -14,7 +14,8 @@ const folder = `Folia-Apple-Music-${pkg.version}-source`;
 const destination = path.join(staging, folder);
 const listing = execFileSync(process.env.GIT || 'git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], { cwd: root }).toString().split('\0').filter(Boolean);
 const allowedExample = name => /(?:example|sample|template)/i.test(path.basename(name));
-const denied = name => name.split('/').some(part => ['.git', '.dev-credentials', '.codex', '.codex-tmp', 'test-results', 'node_modules', 'dist', '.apple-package', 'release'].includes(part))
+// The generated manifest cannot include a hash of a prior manifest at its own path.
+const denied = name => name === 'SOURCE_MANIFEST.json' || name.split('/').some(part => ['.git', '.dev-credentials', '.codex', '.codex-tmp', 'test-results', 'node_modules', 'dist', '.apple-package', 'release'].includes(part))
   || /(?:^|\/)\.env(?:\.|$)/.test(name) && !allowedExample(name)
   || /\.(?:p12|pfx|pem|key|provisionprofile|mobileprovision|log)$/i.test(name)
   || /(?:^|\/)(?:config\.json|cookies?\.json|credentials?\.json|\.npmrc|\.DS_Store)$/i.test(name);

@@ -1,0 +1,39 @@
+{
+  "version": "0.7.20-applemusic.beta.2",
+  "defaultRegion": "CN",
+  "availableRegions": 172,
+  "audioUntouched": true,
+  "reconnected": true,
+  "results": [
+    {
+      "region": "CN",
+      "term": "陈奕迅",
+      "count": 21,
+      "total": 21,
+      "secondCount": 0,
+      "unique": true,
+      "sameRegion": true,
+      "warning": "当前地区仅返回部分目录结果，可细化歌名或歌手继续搜索。"
+    },
+    {
+      "region": "TR",
+      "term": "周杰伦",
+      "count": 25,
+      "total": 194,
+      "secondCount": 25,
+      "unique": true,
+      "sameRegion": true,
+      "warning": null
+    },
+    {
+      "region": "TR",
+      "term": "Eason Chan",
+      "count": 25,
+      "total": 177,
+      "secondCount": 25,
+      "unique": true,
+      "sameRegion": true,
+      "warning": null
+    }
+  ]
+}

@@ -17,7 +17,13 @@ try {
   const page = await app.firstWindow();
   await page.waitForFunction(() => typeof window.electron?.appleMusicRequest === 'function', null, { timeout: 30000 });
   result.window = true;
-  await page.waitForFunction(async () => (await window.electron.appleMusicRequest('status')).data?.authorized, null, { timeout: 90000 });
+  // Authorization can become visible before startup account reconciliation finishes.
+  // Wait for a usable library rather than treating that transient status as readiness.
+  await page.waitForFunction(async () => {
+    if (!(await window.electron.appleMusicRequest('status')).data?.authorized) return false;
+    const library = await window.electron.appleMusicRequest('api', { path: '/v1/me/library/songs', query: { limit: '1', offset: '0' } });
+    return library.ok && Array.isArray(library.data?.data);
+  }, null, { timeout: 90000, polling: 1000 });
   result.automaticConnection = true;
   const checks = await page.evaluate(async () => {
     const statusBefore = await window.electron.appleMusicRequest('status');

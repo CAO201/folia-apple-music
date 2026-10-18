@@ -1,6 +1,7 @@
 
 
 export default {
+  appleSearch: {"region": "Search region", "description": "Choose the Apple catalog storefront. This does not change your Apple account region. Availability depends on your account; songs outside your library open in Music.", "firstSearch": "Confirm a search region. China mainland (CN) is the default. Your choice is saved for next time.", "filter": "Find a country, region or code, e.g. TR", "apply": "Apply region", "noRegions": "No matching regions"},
   appleMusicRelease: {"intro": "Folia Apple Music test edition, based on Folia by chthollyphile and contributors. Licensed under AGPL-3.0.", "music": {"title": "Connect the Music app", "description": "Launches Music and requests authorization on first use. Uses your own library and starts audio only after you choose a song."}, "lyrics": {"title": "NetEase lyric matching", "description": "Apple Music supplies audio. NetEase supplies available timed lyrics, with multilingual matching and manual preview and binding."}, "theme": {"title": "Backgrounds and themes", "description": "Keeps the original visuals. AI themes can use song metadata without lyrics; configure your own AI service."}, "credits": {"title": "Thanks to the original creators", "description": "Original author: chthollyphile and the Folia contributors. Unofficial, non-notarized test edition; complete the macOS prompts on first launch."}},
   appleLyrics: {"title": "Match NetEase lyrics", "description": "Changes lyrics only; Apple Music keeps playing. Your selection is remembered.", "close": "Close", "search": "Search NetEase lyrics", "placeholder": "Song, artist, NetEase song link or song ID", "noResults": "No results. Try a Chinese title, artist, or NetEase song link.", "searchFailed": "Search failed. Please retry.", "pureMusic": "Instrumental", "noLyrics": "No lyrics for this version. Choose another result.", "loadFailed": "Could not load lyrics.", "saveFailed": "Could not save lyrics.", "candidates": "Candidate songs", "preview": "Lyric preview", "loading": "Loading…", "choose": "Select a song to preview lyrics before saving.", "save": "Use these lyrics", "qualityManaged": "Playback quality is controlled by the system Music app."},
   appleMusic: { communityLyrics: 'Community lyrics', librarySongs: 'All library songs', onlySource: 'This edition plays Apple Music only.', },
@@ -601,6 +602,7 @@ export default {
       }
     },
     "commands": {
+      "search-region": { title: "Search region", description: "Find a country, region or code, e.g. TR" },
       "settings-ponder-hints": { "title": "Ponder tutorial hints", "description": "Choose when the hold-G tutorial hint appears" },
       "ponder-hints-always": { "title": "Ponder hints: always show", "description": "Show the hold-G hint on every teachable control" },
       "ponder-hints-unseen": { "title": "Ponder hints: only where I have not looked", "description": "Stop hinting a control once its tutorial has been watched" },
