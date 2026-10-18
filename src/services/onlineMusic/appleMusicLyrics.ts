@@ -1,3 +1,5 @@
+import { getAppleLyricIdentities } from './appleLyricIdentities';
+import { readRecoveredAppleLyrics } from './appleLyricRecoveryCache';
 import { getAppleLibraryLyricDraft } from './appleLibraryLyrics';
 import { hasDeclaredSentenceTimes, hasSentenceTimeline, parseSentenceLyrics } from '../../utils/lyrics/appleTiming';
 import type { SongResult } from '../../types';
@@ -11,34 +13,20 @@ import { requestAppleLyricMetadata, fetchAppleNeteaseLyrics } from './appleNetea
 export async function getAppleNeteaseTimedLyrics(song: SongResult): Promise<ProviderLyricsResult> {
     try {
         let matched: SongResult | null = null;
-        const identities = [song];
+        const identities = await getAppleLyricIdentities(song);
         let pool: SongResult[] = [];
-        for (const keywords of appleLyricSearchQueries(song).slice(0, 2)) {
-            const result = await requestAppleLyricMetadata('search', { keywords });
-            matched = selectAppleNeteaseLyricSong(song, result?.songs || []);
-            if (matched) { pool = result?.songs || []; break; }
-        }
-        if (!matched) {
-            // A same-ID catalog lookup may supply a localized name. Failure never blocks playback or manual correction.
-            try {
-                if (/\p{Script=Han}/u.test(song.name)) throw new Error('Already a Chinese title');
-                const ref = song.sourceRef;
-                const data = await requestAppleLyricMetadata('localized', { title: song.name,
-                    artist: song.artists.map(a => a.name).join(', '), durationMs: song.durationMs,
-                    catalogId: ref?.kind === 'online' ? ref.providerData?.catalogId : undefined });
-                identities.push(...(data?.songs || []));
-            } catch { /* Metadata is optional; retain the original identity. */ }
-            const seen = new Set(appleLyricSearchQueries(song).slice(0, 2));
-            for (const identity of identities) {
-                for (const keywords of appleLyricSearchQueries(identity)) {
-                    if (seen.has(keywords)) continue;
-                    seen.add(keywords);
+        const seen = new Set<string>();
+        for (const identity of identities) {
+            for (const keywords of appleLyricSearchQueries(identity).slice(0, 2)) {
+                if (seen.has(keywords)) continue;
+                seen.add(keywords);
+                try {
                     const data = await requestAppleLyricMetadata('search', { keywords });
                     matched = identities.map(target => selectAppleNeteaseLyricSong(target, data?.songs || [])).find(Boolean) || null;
                     if (matched) { pool = data?.songs || []; break; }
-                }
-                if (matched) break;
+                } catch { /* Try a different spelling after a failed query. */ }
             }
+            if (matched || seen.size >= 6) break;
         }
         if (!matched) return { lyrics: null, isPureMusic: false };
         const candidates = [matched, ...pool.filter(candidate => candidate.id !== matched!.id
@@ -51,6 +39,8 @@ export async function getAppleNeteaseTimedLyrics(song: SongResult): Promise<Prov
                 if (!hasDeclaredSentenceTimes(processed.yrcLrc || processed.mainLrc || '', processed.yrcLrc ? 'yrc' : 'lrc')
                     || !hasSentenceTimeline(processed.lyrics, song.durationMs)) continue;
                 processed.lyrics.appleLyricsOrigin = 'netease';
+                processed.lyrics.appleLyricsMatch = { sourceId: String(candidate.id), title: candidate.name,
+                    artist: candidate.artists.map(a => a.name).join(', '), fetchedAt: Date.now() };
                 return { lyrics: processed.lyrics, mainText: processed.mainLrc, wordByWordText: processed.yrcLrc,
                     translationText: processed.transLrc, romanizationText: processed.romanizationLrc, isPureMusic: false };
             } catch { /* A missing lyric on one exact recording does not hide the next candidate. */ }
@@ -64,6 +54,8 @@ export async function getAppleNeteaseTimedLyrics(song: SongResult): Promise<Prov
 
 // NetEase remains first. Apple library text is only displayed when it already carries real timestamps.
 export async function getAppleMusicLyrics(song: SongResult): Promise<ProviderLyricsResult> {
+    const cached = await readRecoveredAppleLyrics(song);
+    if (cached) return { lyrics: cached, isPureMusic: false };
     let pureMusic = false;
     try {
         const netease = await getAppleNeteaseTimedLyrics(song);
@@ -73,5 +65,6 @@ export async function getAppleMusicLyrics(song: SongResult): Promise<ProviderLyr
     const draft = await getAppleLibraryLyricDraft(song);
     const lyrics = draft.text ? parseSentenceLyrics(draft.text, song.durationMs) : null;
     if (lyrics) lyrics.appleLyricsOrigin = 'apple-library';
-    return { lyrics, mainText: lyrics ? draft.text : null, isPureMusic: lyrics ? false : pureMusic };
+    const recovered = lyrics || await readRecoveredAppleLyrics(song);
+    return { lyrics: recovered, mainText: lyrics ? draft.text : null, isPureMusic: recovered ? false : pureMusic };
 }

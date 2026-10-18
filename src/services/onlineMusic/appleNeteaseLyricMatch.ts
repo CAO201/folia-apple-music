@@ -35,13 +35,17 @@ export function appleLyricSearchQueries(song: SongResult): string[] {
     const title = neteaseLyricTitle(song);
     return [...new Set([`${title} ${artist}`.trim(), title, `${artist} ${song.album.name}`.trim()])].filter(Boolean);
 }
+export function appleLyricMatchScore(target: SongResult, candidate: SongResult) {
+    return calculateMatchScoreDetails({ title: neteaseLyricTitle(target), artist: target.artists.map(a => neteaseLyricArtist(a.name)).join(', '),
+        durationMs: target.durationMs, album: target.album.name }, { ...candidate, name: neteaseLyricTitle(candidate),
+        artists: candidate.artists.map(a => ({ ...a, name: neteaseLyricArtist(a.name) })) });
+}
 export function selectAppleNeteaseLyricSong(target: SongResult, candidates: SongResult[]): SongResult | null {
-    const identity = { title: neteaseLyricTitle(target), artist: target.artists.map(a => neteaseLyricArtist(a.name)).join(', '),
-        durationMs: target.durationMs, album: target.album.name };
     const normalizedTitle = (text: string) => normalizeLyricMatchText(text).replace(/\s+/g, '');
-    return candidates.map(song => ({ song, score: calculateMatchScoreDetails(identity, song) }))
-        .filter(({ song, score }) => normalizedTitle(song.name) === normalizedTitle(neteaseLyricTitle(target))
-            && score.artistMatched && Math.abs(song.durationMs - target.durationMs) <= 4000)
+    if (!target.artists.some(artist => artist.name.trim())) return null;
+    return candidates.map(song => ({ song, score: appleLyricMatchScore(target, song) }))
+        .filter(({ song, score }) => normalizedTitle(neteaseLyricTitle(song)) === normalizedTitle(neteaseLyricTitle(target))
+            && song.artists.some(artist => artist.name.trim()) && score.artistSimilarity >= 0.7 && target.durationMs > 0 && song.durationMs > 0 && Math.abs(song.durationMs - target.durationMs) <= 4000)
         .sort((a, b) => b.score.score - a.score.score
             || Math.abs(a.song.durationMs - target.durationMs) - Math.abs(b.song.durationMs - target.durationMs))[0]?.song || null;
 }

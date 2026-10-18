@@ -1,3 +1,4 @@
+import { recoverAppleLyrics, selectRecoveredAppleLyric } from './appleLyricRecovery';
 import i18n from '../../i18n/config';
 import { useAppleSearchSettingsStore } from '../../stores/useAppleSearchSettingsStore';
 import { alternateAppleSearchQuery } from '../../utils/appleSearchQueries';
@@ -50,7 +51,7 @@ export const appleMusicProvider: OnlineMusicProvider = {
         },
     },
     externalPlayback: { control: (operation, params) => requestAppleMusic(operation, params), setVolume: (volume, muted) => requestAppleMusic('volume', { volume, muted }) },
-    lyrics: { getLyrics: getAppleMusicLyrics, getDraft: getAppleLibraryLyricDraft },
+    lyrics: { recoverLyrics: recoverAppleLyrics, getCandidateLyrics: selectRecoveredAppleLyric, getLyrics: getAppleMusicLyrics, getDraft: getAppleLibraryLyricDraft },
     auth: {
         async authorize() {
             await requestAppleMusic('authorize');

@@ -53,7 +53,7 @@ describe('Apple-only improvements', () => {
         const params = { title: song.name, artist: 'Jay Chou', durationMs: 240000, catalogId: '123' };
         expect((await lookup(params)).songs.every((item: any) => item.id === 123)).toBe(true);
         await lookup(params);
-        expect(fetcher).toHaveBeenCalledTimes(2);
+        expect(fetcher).toHaveBeenCalledTimes(3);
         expect(fetcher.mock.calls.every(([url]) => url.startsWith('https://itunes.apple.com/lookup?'))).toBe(true);
         expect((await lookup({ ...params, durationMs: 255000 })).songs).toEqual([]);
     });

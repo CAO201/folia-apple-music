@@ -1,0 +1,31 @@
+{
+  "version": "0.7.20-applemusic.beta.4",
+  "isolatedProfile": true,
+  "playbackCommandsSent": false,
+  "sourceChecks": [
+    {
+      "provider": "qq",
+      "ok": true,
+      "stage": "lyrics",
+      "candidateCount": 15
+    },
+    {
+      "provider": "kugou",
+      "ok": true,
+      "stage": "lyrics",
+      "candidateCount": 15
+    },
+    {
+      "provider": "lrclib",
+      "ok": true,
+      "stage": "lyrics",
+      "candidateCount": 20
+    },
+    {
+      "provider": "netease",
+      "ok": true,
+      "stage": "lyrics"
+    }
+  ],
+  "pageErrors": []
+}

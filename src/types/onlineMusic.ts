@@ -338,12 +338,22 @@ export interface OnlinePlaybackReportProvider {
     reportPlayback(song: SongResult, report: ProviderPlaybackReport): Promise<void>;
 }
 
+export interface FallbackLyricCandidate {
+    source: 'qq' | 'kugou' | 'lrclib';
+    song: SongResult;
+    automatic: boolean;
+}
+export interface FallbackLyricsResult extends ProviderLyricsResult {
+    candidates?: FallbackLyricCandidate[];
+}
 export interface ProviderLyricDraft {
     text: string;
     source: 'apple-library' | 'netease';
     reason?: 'empty' | 'not-in-library' | 'unavailable' | 'untimed';
 }
 export interface OnlineLyricsProvider {
+    recoverLyrics?(song: SongResult, options?: { signal?: AbortSignal; force?: boolean }): Promise<FallbackLyricsResult>;
+    getCandidateLyrics?(song: SongResult, candidate: FallbackLyricCandidate, signal?: AbortSignal): Promise<ProviderLyricsResult>;
     getDraft?(song: SongResult): Promise<ProviderLyricDraft>;
     getLyrics(song: SongResult, context?: { userId?: MediaId | null }): Promise<ProviderLyricsResult>;
     getChorusRanges?(songId: MediaId): Promise<ChorusRange[]>;

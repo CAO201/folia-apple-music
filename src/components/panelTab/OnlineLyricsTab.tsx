@@ -1,3 +1,4 @@
+import AppleLyricRecoveryStatus from './AppleLyricRecoveryStatus';
 import { useAppleLyricEditorStore } from '../../stores/useAppleLyricEditorStore';
 import AppleLyricTimingEditor from './AppleLyricTimingEditor';
 import { usePlaybackStore } from '../../stores/usePlaybackStore';
@@ -56,7 +57,7 @@ const OnlineLyricsTab: React.FC<OnlineLyricsTabProps> = ({
     const activeSource = onlineLyricsState?.lyricsSource === 'imported' && hasImportedLyrics ? 'imported' : 'online';
 
     const onlineSourceLabel = useMemo(() => {
-        if (song.sourceRef?.kind === 'online' && song.sourceRef.providerId === 'applemusic') return currentOrigin === 'apple-library' ? t('appleTiming.appleSource') : t('lyricProvider.netease');
+        if (song.sourceRef?.kind === 'online' && song.sourceRef.providerId === 'applemusic') return currentOrigin === 'apple-library' ? t('appleTiming.appleSource') : currentOrigin === 'lrclib' ? 'LRCLIB' : t(`lyricProvider.${currentOrigin === 'qq' || currentOrigin === 'kugou' ? currentOrigin : 'netease'}`);
         return getLyricProviderLabel(
             onlineLyricsState?.matchedLyricsSource ?? getSongNativeLyricProviderSource(song),
             onlineLyricsState?.matchedLyricsProviderPlatform,
@@ -100,6 +101,8 @@ const OnlineLyricsTab: React.FC<OnlineLyricsTabProps> = ({
                 <summary className="cursor-pointer text-xs font-semibold">{t('appleTiming.title')}</summary>
                 {expanded && <div className="mt-3"><AppleLyricTimingEditor key={String(song.sourceRef.mediaId)} song={song} onSaved={() => onChangeLyricsSource('imported')} /></div>}
             </details>}
+            {song.sourceRef?.kind === 'online' && song.sourceRef.providerId === 'applemusic' && <AppleLyricRecoveryStatus
+                key={String(song.sourceRef.mediaId)} song={song} onSaved={onChangeLyricsSource} />}
             <ReplayGainControl
                 values={song.replayGain}
                 mode={replayGainMode}

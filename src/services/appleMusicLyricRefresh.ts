@@ -12,7 +12,8 @@ export async function refreshAppleTimedLyrics(song: SongResult) {
         const lyrics = resolveOnlineLyrics(state, null);
         return {state,lyrics,isPureMusic:resolveOnlineLyricsPureMusic(state,lyrics?.lines.map(line => line.fullText).join('\n') || '')};
     }
-    const result = await omni.getLyrics(song);
+    let result = await omni.getLyrics(song);
+    if (!result.lyrics) result = await omni.recoverLyrics(song, { force: true });
     if (result.lyrics) await saveToCache(getSongResourceCacheKey('lyric',song),result.lyrics);
     return {state,lyrics:result.lyrics,isPureMusic:result.isPureMusic};
 }

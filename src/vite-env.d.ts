@@ -770,7 +770,7 @@ declare global {
 
   interface Window {
     electron?: {
-      neteaseLyricsRequest?: (operation: 'search' | 'lyrics' | 'detail' | 'localized', params: Record<string, unknown>) => Promise<{ ok: boolean; data?: any; error?: string }>;
+      neteaseLyricsRequest?: (operation: 'search' | 'lyrics' | 'detail' | 'localized' | 'external-search' | 'external-lyrics', params: Record<string, unknown>) => Promise<{ ok: boolean; data?: any; error?: string }>;
       appleMusicRequest?: (operation: string, params?: Record<string, unknown>) => Promise<{ ok: boolean; data?: any; error?: { code: string; message: string } }>;
       webUtils?: {
         /** Resolves the OS path of a dropped File (File.path was removed in modern Electron). */

@@ -18,3 +18,5 @@ This project is not affiliated with or endorsed by Apple, NetEase, or the origin
 本项目为 Folia 的非官方修改版。感谢原作者 chthollyphile 及全部贡献者；保留原作者署名、许可证、上游说明与第三方致谢。本发行版不代表原作者或 Apple、网易云官方产品。
 
 There is no warranty; see sections 15–17 of `LICENSE`.
+
+2026-10-18 beta.4: Apple Music 歌词自动补全增加 QQ、酷狗与 LRCLIB 只读来源，中文目录名称与明确别名优先匹配，校验歌手、专辑、版本和时长；补全结果仅缓存在用户本机。调研参考 LDDC、LRCLIB/LRCGET 的公开说明，未复制或嵌入 LDDC 程序。Folia 原作者署名、AGPL-3.0 和既有第三方许可保持不变。

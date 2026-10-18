@@ -1,3 +1,4 @@
+import { useAppleLyricRecovery } from './useAppleLyricRecovery';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type { MotionValue } from 'framer-motion';
@@ -133,6 +134,7 @@ export function useLibraryPlaybackController({
 }: UseLibraryPlaybackControllerParams) {
     // Read here rather than passed in: all store fields, a module-level signal, or i18n.
     const { t } = useTranslation();
+    useAppleLyricRecovery(setLyrics);
     const audioQuality = useAudioSettingsStore(state => state.audioQuality);
     const queueAddBehavior = useAudioSettingsStore(state => state.queueAddBehavior);
     const currentSong = usePlaybackStore(state => state.currentSong);

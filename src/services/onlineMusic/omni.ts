@@ -1,3 +1,4 @@
+import type { FallbackLyricCandidate, FallbackLyricsResult } from '../../types/onlineMusic';
 import type { SongResult, UnifiedSong } from '../../types';
 import type {
     AudioQualityPreference,
@@ -574,6 +575,16 @@ export const omni = {
         })).result;
         // Extension layers (Folium omni hooks) may rewrite the lyrics after the provider answered.
         return applyOmniLyricsHook(song, resolved);
+    },
+
+    async recoverLyrics(song: SongResult, options?: { signal?: AbortSignal; force?: boolean }): Promise<FallbackLyricsResult> {
+        const provider = providerForSong(song);
+        return provider.lyrics?.recoverLyrics?.(song, options) ?? { lyrics: null, isPureMusic: false };
+    },
+
+    async getCandidateLyrics(song: SongResult, candidate: FallbackLyricCandidate, signal?: AbortSignal): Promise<OmniLyricsResult> {
+        const provider = providerForSong(song);
+        return provider.lyrics?.getCandidateLyrics?.(song, candidate, signal) ?? unsupported(provider.id, 'lyrics');
     },
 
     async getLyricDraft(song: SongResult) {
